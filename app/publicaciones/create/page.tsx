@@ -9,6 +9,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useTiendas } from '@/hooks/useTiendas';
+import { useProductos } from '@/hooks/useProductos';
 import { publicacionesAPI } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ const publicacionSchema = z.object({
   titulo: z.string().min(5, 'El título debe tener al menos 5 caracteres'),
   contenido: z.string().min(20, 'El contenido debe tener al menos 20 caracteres'),
   tienda_id: z.string().min(1, 'Selecciona una tienda'),
+  producto_id: z.string().min(1, 'Selecciona un producto'),
   imagenes: z.array(z.string().url('Debe ser una URL válida')).optional(),
 });
 
@@ -61,6 +63,8 @@ const CreatePublicacionContent = () => {
   });
 
   const selectedTienda = watch('tienda_id');
+  const selectedProducto = watch('producto_id');
+  const { productos: productosTienda, loading: loadingProductos } = useProductos(selectedTienda ? { tienda_id: selectedTienda, limit: 100 } : undefined);
 
   const handleAddImage = () => {
     if (newImageUrl && !imageUrls.includes(newImageUrl)) {
@@ -85,15 +89,18 @@ const CreatePublicacionContent = () => {
       setError(null);
 
       const publicacionData = {
-        ...data,
-        fecha_publicacion: new Date().toISOString(),
-        imagenes: imageUrls.length > 0 ? imageUrls : undefined,
+        titulo: data.titulo,
+        descripcion: data.contenido,
+        fecha: new Date().toISOString(),
+        imagenes: imageUrls,
+        tienda_id: Number(data.tienda_id),
+        producto_id: Number(data.producto_id),
       };
 
       const response = await publicacionesAPI.create(publicacionData);
       
       toast.success('Publicación creada exitosamente');
-      router.push(`/publicaciones/${response.data.id}`);
+      router.push(`/publicaciones/${response.data._id}`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al crear la publicación';
       setError(errorMessage);
@@ -103,8 +110,11 @@ const CreatePublicacionContent = () => {
     }
   };
 
-  // Filtrar tiendas del usuario actual
-  const userTiendas = tiendas.filter(tienda => tienda.usuario_id === user?.id);
+  // Mostrar todas las tiendas y eliminar duplicados por _id
+  const userTiendas = tiendas
+    .filter((tienda, index, self) =>
+      index === self.findIndex(t => t._id === tienda._id)
+    );
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -165,7 +175,7 @@ const CreatePublicacionContent = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {userTiendas.map((tienda) => (
-                    <SelectItem key={tienda.id} value={tienda.id}>
+                    <SelectItem key={tienda._id} value={String(tienda._id)}>
                       {tienda.nombre}
                     </SelectItem>
                   ))}
@@ -198,6 +208,29 @@ const CreatePublicacionContent = () => {
               />
               {errors.contenido && (
                 <p className="text-sm text-red-600">{errors.contenido.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="producto_id">Producto *</Label>
+              <Select value={selectedProducto} onValueChange={(value) => setValue('producto_id', value)} disabled={!selectedTienda || loadingProductos}>
+                <SelectTrigger>
+                  <SelectValue placeholder={selectedTienda ? (loadingProductos ? 'Cargando productos...' : 'Selecciona un producto') : 'Selecciona una tienda primero'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {productosTienda && productosTienda.length > 0 ? (
+                    productosTienda.map((producto) => (
+                      <SelectItem key={producto._id} value={String(producto._id)}>
+                        {producto.nombre}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-gray-500 text-sm">{selectedTienda && !loadingProductos ? 'No hay productos para esta tienda' : ''}</div>
+                  )}
+                </SelectContent>
+              </Select>
+              {errors.producto_id && (
+                <p className="text-sm text-red-600">{errors.producto_id.message}</p>
               )}
             </div>
 

@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -32,6 +34,43 @@ type ComentarioFormData = z.infer<typeof comentarioSchema>;
 export default function PublicacionDetailPage() {
   const params = useParams();
   const publicacionId = params.id as string;
+
+  // Esperar a que los parámetros estén disponibles
+  if (!params || !publicacionId) {
+    return (
+      <ProtectedRoute>
+        <Layout>
+          <div className="flex items-center justify-center min-h-64">
+            <div className="text-center">
+              <Spinner size="lg" className="mx-auto mb-4" />
+              <p className="text-muted-foreground">Cargando...</p>
+            </div>
+          </div>
+        </Layout>
+      </ProtectedRoute>
+    );
+  }
+
+  // Validar que el ID no sea undefined
+  if (publicacionId === 'undefined') {
+    return (
+      <ProtectedRoute>
+        <Layout>
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              ID de publicación inválido
+            </h2>
+            <p className="text-gray-600 mb-4">
+              La URL no contiene un ID de publicación válido.
+            </p>
+            <Link href="/publicaciones">
+              <Button>Volver a Publicaciones</Button>
+            </Link>
+          </div>
+        </Layout>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -66,9 +105,11 @@ const PublicacionDetailContent = ({ publicacionId }: { publicacionId: string }) 
     try {
       setComentarioLoading(true);
       await comentariosAPI.create({
-        contenido: data.contenido,
-        usuario_id: user.id,
-        publicacion_id: publicacionId,
+        comentario: data.contenido,
+        usuario_id: user._id,
+        publicacion_id: Number(publicacionId),
+        fecha: new Date().toISOString(),
+        megusta: 0,
       });
       
       toast.success('Comentario agregado');
@@ -88,22 +129,23 @@ const PublicacionDetailContent = ({ publicacionId }: { publicacionId: string }) 
       setReaccionLoading(true);
       
       // Buscar si ya existe una reacción del usuario
-      const existingReaction = reacciones.find(r => r.usuario_id === user.id);
+      const existingReaction = reacciones.find(r => r.usuario_id === user._id);
       
       if (existingReaction) {
-        if (existingReaction.tipo === tipo) {
+        if (existingReaction.reaccion === (tipo === 'like' ? 1 : 0)) {
           // Eliminar reacción si es la misma
-          await reaccionesAPI.delete(existingReaction.id);
+          await reaccionesAPI.delete(existingReaction._id.toString());
         } else {
           // Actualizar reacción si es diferente
-          await reaccionesAPI.update(existingReaction.id, { tipo });
+          await reaccionesAPI.update(existingReaction._id.toString(), { reaccion: tipo === 'like' ? 1 : 0 });
         }
       } else {
         // Crear nueva reacción
         await reaccionesAPI.create({
-          tipo,
-          usuario_id: user.id,
-          publicacion_id: publicacionId,
+          reaccion: tipo === 'like' ? 1 : 0,
+          usuario_id: user._id,
+          publicacion_id: Number(publicacionId),
+          fecha: new Date().toISOString(),
         });
       }
       
@@ -146,9 +188,9 @@ const PublicacionDetailContent = ({ publicacionId }: { publicacionId: string }) 
     );
   }
 
-  const likesCount = reacciones.filter(r => r.tipo === 'like').length;
-  const dislikesCount = reacciones.filter(r => r.tipo === 'dislike').length;
-  const userReaction = reacciones.find(r => r.usuario_id === user?.id);
+  const likesCount = reacciones.filter(r => r.reaccion === 1).length;
+  const dislikesCount = reacciones.filter(r => r.reaccion === 0).length;
+  const userReaction = reacciones.find(r => r.usuario_id === user?._id);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -165,11 +207,11 @@ const PublicacionDetailContent = ({ publicacionId }: { publicacionId: string }) 
             <h1 className="text-3xl font-bold text-gray-900">{publicacion.titulo}</h1>
             <div className="flex items-center mt-2 text-gray-600">
               <Calendar className="mr-2 h-4 w-4" />
-              <span>{new Date(publicacion.fecha_publicacion).toLocaleDateString()}</span>
+              <span>{new Date(publicacion.fecha).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
-        <Link href={`/publicaciones/${publicacion.id}/edit`}>
+        <Link href={`/publicaciones/${publicacion._id}/edit`}>
           <Button>
             <Edit className="mr-2 h-4 w-4" />
             Editar
@@ -183,7 +225,7 @@ const PublicacionDetailContent = ({ publicacionId }: { publicacionId: string }) 
         <Card>
           <CardContent className="pt-6">
             <div className="prose prose-gray max-w-none">
-              <p className="text-lg leading-relaxed">{publicacion.contenido}</p>
+              <p className="text-lg leading-relaxed">{publicacion.descripcion}</p>
             </div>
           </CardContent>
         </Card>
@@ -240,7 +282,7 @@ const PublicacionDetailContent = ({ publicacionId }: { publicacionId: string }) 
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <Button
-                variant={userReaction?.tipo === 'like' ? 'default' : 'outline'}
+                variant={userReaction?.reaccion === 1 ? 'default' : 'outline'}
                 onClick={() => handleReaccion('like')}
                 disabled={reaccionLoading}
                 className="flex items-center gap-2"
@@ -249,7 +291,7 @@ const PublicacionDetailContent = ({ publicacionId }: { publicacionId: string }) 
                 <span>{likesCount}</span>
               </Button>
               <Button
-                variant={userReaction?.tipo === 'dislike' ? 'default' : 'outline'}
+                variant={userReaction?.reaccion === 0 ? 'default' : 'outline'}
                 onClick={() => handleReaccion('dislike')}
                 disabled={reaccionLoading}
                 className="flex items-center gap-2"
@@ -298,16 +340,16 @@ const PublicacionDetailContent = ({ publicacionId }: { publicacionId: string }) 
                 </p>
               ) : (
                 comentarios.map((comentario) => (
-                  <div key={comentario.id} className="border-l-4 border-gray-200 pl-4 py-3">
+                  <div key={comentario._id} className="border-l-4 border-gray-200 pl-4 py-3">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-gray-900">
                         Usuario {comentario.usuario_id}
                       </span>
                       <span className="text-sm text-gray-500">
-                        {new Date(comentario.created_at).toLocaleDateString()}
+                        {new Date(comentario.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="text-gray-700">{comentario.contenido}</p>
+                    <p className="text-gray-700">{comentario.comentario}</p>
                   </div>
                 ))
               )}

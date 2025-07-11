@@ -66,12 +66,12 @@ const PublicacionesContent = () => {
       {/* Publicaciones Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {publicaciones.map((publicacion) => (
-          <Card key={publicacion.id} className="hover:shadow-md transition-shadow">
+          <Card key={publicacion._id} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="secondary" className="text-xs">
                   <Calendar className="mr-1 h-3 w-3" />
-                  {new Date(publicacion.fecha_publicacion).toLocaleDateString()}
+                  {new Date(publicacion.fecha).toLocaleDateString()}
                 </Badge>
                 {publicacion.imagenes && publicacion.imagenes.length > 0 && (
                   <Badge variant="outline" className="text-xs">
@@ -82,7 +82,7 @@ const PublicacionesContent = () => {
               </div>
               <CardTitle className="text-lg">{publicacion.titulo}</CardTitle>
               <CardDescription className="line-clamp-2">
-                {publicacion.contenido}
+                {publicacion.descripcion}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -109,7 +109,7 @@ const PublicacionesContent = () => {
                 </div>
               )}
               
-              <Link href={`/publicaciones/${publicacion.id}`}>
+              <Link href={`/publicaciones/${publicacion._id}`}>
                 <Button variant="outline" className="w-full">
                   <Eye className="mr-2 h-4 w-4" />
                   Ver Detalles

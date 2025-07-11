@@ -122,7 +122,14 @@ export const tiendasAPI = {
 
   getById: async (id: string): Promise<APIResponse<Tienda>> => {
     const response = await fetch(`${API_BASE_URL}/tiendas/${id}`, createFetchOptions());
-    return handleResponse(response);
+    const data = await response.json();
+    
+    // El backend devuelve directamente el objeto de la tienda
+    if (data._id) {
+      return { data };
+    } else {
+      throw new Error('Tienda no encontrada');
+    }
   },
 
   create: async (data: Omit<Tienda, '_id' | 'createdAt' | 'updatedAt'>): Promise<APIResponse<Tienda>> => {
@@ -211,7 +218,14 @@ export const productosAPI = {
 
   getById: async (id: string): Promise<APIResponse<Producto>> => {
     const response = await fetch(`${API_BASE_URL}/productos/${id}`, createFetchOptions());
-    return handleResponse(response);
+    const data = await response.json();
+    
+    // El backend devuelve directamente el objeto del producto
+    if (data._id) {
+      return { data };
+    } else {
+      throw new Error('Producto no encontrado');
+    }
   },
 
   create: async (data: Omit<Producto, '_id' | 'createdAt' | 'updatedAt'>): Promise<APIResponse<Producto>> => {
@@ -287,7 +301,14 @@ export const publicacionesAPI = {
 
   getById: async (id: string): Promise<APIResponse<Publicacion>> => {
     const response = await fetch(`${API_BASE_URL}/publicaciones/${id}`, createFetchOptions());
-    return handleResponse(response);
+    const data = await response.json();
+    
+    // El backend devuelve directamente el objeto de la publicación
+    if (data._id) {
+      return { data };
+    } else {
+      throw new Error('Publicación no encontrada');
+    }
   },
 
   create: async (data: Omit<Publicacion, '_id' | 'createdAt' | 'updatedAt'>): Promise<APIResponse<Publicacion>> => {
@@ -334,7 +355,7 @@ export const comentariosAPI = {
     return handleResponse(response);
   },
 
-  create: async (data: Omit<Comentario, 'id' | 'created_at' | 'updated_at'>): Promise<APIResponse<Comentario>> => {
+  create: async (data: Omit<Comentario, '_id' | 'createdAt' | 'updatedAt'>): Promise<APIResponse<Comentario>> => {
     const response = await fetch(`${API_BASE_URL}/comentarios`, 
       createFetchOptions({
         method: 'POST',
@@ -369,7 +390,7 @@ export const reaccionesAPI = {
     return handleResponse(response);
   },
 
-  create: async (data: Omit<Reaccion, 'id' | 'created_at' | 'updated_at'>): Promise<APIResponse<Reaccion>> => {
+  create: async (data: Omit<Reaccion, '_id' | 'createdAt' | 'updatedAt'>): Promise<APIResponse<Reaccion>> => {
     const response = await fetch(`${API_BASE_URL}/reacciones`, 
       createFetchOptions({
         method: 'POST',

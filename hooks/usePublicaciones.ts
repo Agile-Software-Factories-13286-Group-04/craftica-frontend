@@ -22,10 +22,10 @@ export const usePublicaciones = (params?: { page?: number; limit?: number; tiend
   };
 };
 
-export const usePublicacion = (id: string) => {
+export const usePublicacion = (id: string | undefined) => {
   const { data, error, mutate } = useSWR(
-    id ? ['publicacion', id] : null,
-    () => publicacionesAPI.getById(id),
+    id && id !== 'undefined' ? ['publicacion', id] : null,
+    () => publicacionesAPI.getById(id!),
     { revalidateOnFocus: false }
   );
 

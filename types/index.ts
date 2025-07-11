@@ -41,13 +41,14 @@ export interface RegisterData {
 export interface Tienda {
   _id: number;
   nombre: string;
-  calificacion: number;
+  calificacion?: number;
   imagen?: string;
-  localidad: {
+  localidad?: {
     direccion: string;
     ciudad: string;
     pais: string;
   };
+  usuario_id?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,6 +59,7 @@ export interface Producto {
   precio: number;
   descripcion: string;
   categoria: string[];
+  imagen?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,7 +71,7 @@ export interface Publicacion {
   fecha: string;
   imagenes: string[];
   tienda_id: number;
-  producto: Producto;
+  producto_id: number;
 }
 
 export interface Comentario {

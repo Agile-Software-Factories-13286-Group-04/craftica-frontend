@@ -100,8 +100,12 @@ const CreateProductoContent = () => {
     }
   };
 
-  // Filtrar tiendas del usuario actual
-  const userTiendas = tiendas.filter(tienda => tienda.usuario_id === user?.id);
+  // Filtrar tiendas del usuario actual y eliminar duplicados por _id
+  const userTiendas = tiendas
+    .filter(tienda => tienda.usuario_id === user?.id)
+    .filter((tienda, index, self) =>
+      index === self.findIndex(t => t._id === tienda._id)
+    );
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -162,7 +166,7 @@ const CreateProductoContent = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {userTiendas.map((tienda) => (
-                    <SelectItem key={tienda.id} value={tienda.id}>
+                    <SelectItem key={tienda._id} value={String(tienda._id)}>
                       {tienda.nombre}
                     </SelectItem>
                   ))}
