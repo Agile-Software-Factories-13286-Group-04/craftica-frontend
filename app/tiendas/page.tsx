@@ -131,12 +131,12 @@ const TiendasContent = () => {
             <CardContent className="space-y-3">
               <div className="flex items-center text-sm text-gray-600">
                 <MapPin className="mr-2 h-4 w-4" />
-                <span>{tienda.localidad.direccion}</span>
+                <span>{tienda.localidad?.direccion || 'Dirección no disponible'}</span>
               </div>
               
               <div className="flex items-center gap-2 pt-2">
-                <Badge variant="secondary">{tienda.localidad.ciudad}</Badge>
-                <Badge variant="outline">{tienda.localidad.pais}</Badge>
+                <Badge variant="secondary">{tienda.localidad?.ciudad || 'Ciudad no disponible'}</Badge>
+                <Badge variant="outline">{tienda.localidad?.pais || 'País no disponible'}</Badge>
               </div>
               
               <div className="pt-4">
