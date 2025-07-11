@@ -4,13 +4,16 @@ import { useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Layout } from '@/components/layout/Layout';
 import { useTiendas } from '@/hooks/useTiendas';
+import { tiendasAPI } from '@/services/api';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { ErrorDisplay } from '@/components/ui/error-display';
-import { MapPin, Phone, Clock, Plus, Eye, Store } from 'lucide-react';
+import { MapPin, Phone, Clock, Plus, Eye, Store, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -25,15 +28,35 @@ export default function TiendasPage() {
 }
 
 const TiendasContent = () => {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({ ciudad: '', pais: '' });
+  const [deletingTienda, setDeletingTienda] = useState<string | null>(null);
 
   const { tiendas, loading, error, totalPages, mutate } = useTiendas({
     page: currentPage,
     limit: 12,
     ...filters,
   });
+
+  const handleDelete = async (tiendaId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta tienda? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      setDeletingTienda(tiendaId);
+      await tiendasAPI.delete(tiendaId);
+      toast.success('Tienda eliminada exitosamente');
+      mutate(); // Refrescar la lista
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar la tienda';
+      toast.error(errorMessage);
+    } finally {
+      setDeletingTienda(null);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,13 +162,33 @@ const TiendasContent = () => {
                 <Badge variant="outline">{tienda.localidad?.pais || 'País no disponible'}</Badge>
               </div>
               
-              <div className="pt-4">
+              <div className="pt-4 space-y-2">
                 <Link href={`/tiendas/${tienda._id}`}>
                   <Button variant="outline" className="w-full">
                     <Eye className="mr-2 h-4 w-4" />
                     Ver Detalles
                   </Button>
                 </Link>
+                
+                {/* Botones de acción - temporalmente visibles para todas las tiendas */}
+                <div className="flex gap-2">
+                  <Link href={`/tiendas/${tienda._id}/edit`}>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <Edit className="mr-1 h-3 w-3" />
+                      Editar
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleDelete(tienda._id.toString())}
+                    disabled={deletingTienda === tienda._id.toString()}
+                  >
+                    <Trash2 className="mr-1 h-3 w-3" />
+                    {deletingTienda === tienda._id.toString() ? '...' : 'Eliminar'}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

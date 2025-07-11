@@ -90,7 +90,7 @@ const EditProductoContent = ({ productoId }: { productoId: string }) => {
         nombre: producto.nombre,
         descripcion: producto.descripcion,
         precio: producto.precio,
-        categoria: producto.categoria,
+        categoria: producto.categoria[0] || '',
         imagen: producto.imagen || '',
         tienda_id: producto.tienda_id,
       });
@@ -106,6 +106,7 @@ const EditProductoContent = ({ productoId }: { productoId: string }) => {
 
       const updatedData = {
         ...data,
+        categoria: [data.categoria],
         imagen: data.imagen || undefined,
       };
 

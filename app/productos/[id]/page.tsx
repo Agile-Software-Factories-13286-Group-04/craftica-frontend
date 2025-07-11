@@ -16,19 +16,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function ProductoDetailPage() {
-  const params = useParams();
-  const productoId = params.id as string;
-
   return (
     <ProtectedRoute>
       <Layout>
-        <ProductoDetailContent productoId={productoId} />
+        <ProductoDetailContent />
       </Layout>
     </ProtectedRoute>
   );
 }
 
-const ProductoDetailContent = ({ productoId }: { productoId: string }) => {
+const ProductoDetailContent = () => {
+  const params = useParams();
+  const productoId = params.id as string;
   const { user } = useAuth();
   const { producto, loading, error, mutate } = useProducto(productoId);
   const { productos: productosRelacionados } = useProductos({
@@ -68,7 +67,7 @@ const ProductoDetailContent = ({ productoId }: { productoId: string }) => {
   }
 
   // Filtrar productos relacionados (misma categoría, excluyendo el actual)
-  const related = productosRelacionados.filter(p => p.id !== producto.id);
+  const related = productosRelacionados.filter(p => p._id !== producto._id);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -121,11 +120,11 @@ const ProductoDetailContent = ({ productoId }: { productoId: string }) => {
             <div className="text-sm text-gray-500">
               <p><strong>Categoría:</strong> {producto.categoria}</p>
               <p><strong>Precio:</strong> ${producto.precio.toLocaleString()}</p>
-              <p><strong>Fecha de creación:</strong> {new Date(producto.created_at).toLocaleDateString()}</p>
+              <p><strong>Fecha de creación:</strong> {new Date(producto.createdAt).toLocaleDateString()}</p>
             </div>
 
             <div className="flex gap-4">
-              <Link href={`/productos/${producto.id}/edit`}>
+              <Link href={`/productos/${producto._id}/edit`}>
                 <Button>
                   <Edit className="mr-2 h-4 w-4" />
                   Editar Producto
@@ -147,7 +146,7 @@ const ProductoDetailContent = ({ productoId }: { productoId: string }) => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {related.map((relatedProduct) => (
-              <Card key={relatedProduct.id} className="hover:shadow-md transition-shadow">
+              <Card key={relatedProduct._id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-4">
                   {relatedProduct.imagen && (
                     <div className="aspect-square relative rounded-lg overflow-hidden mb-4">
@@ -172,7 +171,7 @@ const ProductoDetailContent = ({ productoId }: { productoId: string }) => {
                     </span>
                   </div>
                   
-                  <Link href={`/productos/${relatedProduct.id}`}>
+                  <Link href={`/productos/${relatedProduct._id}`}>
                     <Button variant="outline" className="w-full">
                       <Eye className="mr-2 h-4 w-4" />
                       Ver Detalles

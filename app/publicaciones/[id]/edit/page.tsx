@@ -38,6 +38,43 @@ export default function EditPublicacionPage() {
   const params = useParams();
   const publicacionId = params.id as string;
 
+  // Esperar a que los parámetros estén disponibles
+  if (!params || !publicacionId) {
+    return (
+      <ProtectedRoute>
+        <Layout>
+          <div className="flex items-center justify-center min-h-64">
+            <div className="text-center">
+              <Spinner size="lg" className="mx-auto mb-4" />
+              <p className="text-muted-foreground">Cargando...</p>
+            </div>
+          </div>
+        </Layout>
+      </ProtectedRoute>
+    );
+  }
+
+  // Validar que el ID no sea undefined
+  if (publicacionId === 'undefined') {
+    return (
+      <ProtectedRoute>
+        <Layout>
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              ID de publicación inválido
+            </h2>
+            <p className="text-gray-600 mb-4">
+              La URL no contiene un ID de publicación válido.
+            </p>
+            <Link href="/publicaciones">
+              <Button>Volver a Publicaciones</Button>
+            </Link>
+          </div>
+        </Layout>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <Layout>
@@ -75,8 +112,8 @@ const EditPublicacionContent = ({ publicacionId }: { publicacionId: string }) =>
     if (publicacion) {
       reset({
         titulo: publicacion.titulo,
-        contenido: publicacion.contenido,
-        tienda_id: publicacion.tienda_id,
+        contenido: publicacion.descripcion,
+        tienda_id: publicacion.tienda_id.toString(),
         imagenes: publicacion.imagenes || [],
       });
       setImageUrls(publicacion.imagenes || []);
@@ -106,15 +143,17 @@ const EditPublicacionContent = ({ publicacionId }: { publicacionId: string }) =>
       setError(null);
 
       const updatedData = {
-        ...data,
+        titulo: data.titulo,
+        descripcion: data.contenido,
+        tienda_id: Number(data.tienda_id),
         imagenes: imageUrls.length > 0 ? imageUrls : undefined,
       };
 
-      await publicacionesAPI.update(publicacion.id, updatedData);
+      await publicacionesAPI.update(publicacion._id.toString(), updatedData);
       
       toast.success('Publicación actualizada exitosamente');
       mutate(); // Revalidar datos
-      router.push(`/publicaciones/${publicacion.id}`);
+      router.push(`/publicaciones/${publicacion._id}`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al actualizar la publicación';
       setError(errorMessage);
@@ -149,14 +188,14 @@ const EditPublicacionContent = ({ publicacionId }: { publicacionId: string }) =>
   }
 
   // Filtrar tiendas del usuario actual
-  const userTiendas = tiendas.filter(tienda => tienda.usuario_id === user?.id);
+  const userTiendas = tiendas.filter(tienda => tienda.usuario_id === user?._id);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center mb-4">
-          <Link href={`/publicaciones/${publicacion.id}`}>
+          <Link href={`/publicaciones/${publicacion._id}`}>
             <Button variant="outline" size="sm" className="mr-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
@@ -198,7 +237,7 @@ const EditPublicacionContent = ({ publicacionId }: { publicacionId: string }) =>
                 </SelectTrigger>
                 <SelectContent>
                   {userTiendas.map((tienda) => (
-                    <SelectItem key={tienda.id} value={tienda.id}>
+                    <SelectItem key={tienda._id} value={tienda._id.toString()}>
                       {tienda.nombre}
                     </SelectItem>
                   ))}
@@ -278,7 +317,7 @@ const EditPublicacionContent = ({ publicacionId }: { publicacionId: string }) =>
             </div>
 
             <div className="flex justify-end space-x-4 pt-6">
-              <Link href={`/publicaciones/${publicacion.id}`}>
+              <Link href={`/publicaciones/${publicacion._id}`}>
                 <Button type="button" variant="outline">
                   Cancelar
                 </Button>

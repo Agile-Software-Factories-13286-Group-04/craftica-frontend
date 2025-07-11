@@ -4,10 +4,10 @@ import useSWR from 'swr';
 import { comentariosAPI } from '@/services/api';
 import { Comentario } from '@/types';
 
-export const useComentarios = (publicacionId: string) => {
+export const useComentarios = (publicacionId: string | undefined) => {
   const { data, error, mutate } = useSWR(
-    publicacionId ? ['comentarios', publicacionId] : null,
-    () => comentariosAPI.getByPublicacion(publicacionId),
+    publicacionId && publicacionId !== 'undefined' ? ['comentarios', publicacionId] : null,
+    () => comentariosAPI.getByPublicacion(publicacionId!),
     { revalidateOnFocus: false }
   );
 

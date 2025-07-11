@@ -6,12 +6,16 @@ import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useTienda } from '@/hooks/useTiendas';
 import { usePublicaciones } from '@/hooks/usePublicaciones';
+import { tiendasAPI } from '@/services/api';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { ErrorDisplay } from '@/components/ui/error-display';
-import { MapPin, Phone, Clock, Edit, MessageSquare, Calendar } from 'lucide-react';
+import { MapPin, Phone, Clock, Edit, MessageSquare, Calendar, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -30,11 +34,31 @@ export default function TiendaDetailPage() {
 
 const TiendaDetailContent = ({ tiendaId }: { tiendaId: string }) => {
   const { user } = useAuth();
+  const router = useRouter();
   const { tienda, loading, error, mutate } = useTienda(tiendaId);
   const { publicaciones, loading: publicacionesLoading } = usePublicaciones({
     tienda_id: tiendaId,
     limit: 6,
   });
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta tienda? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await tiendasAPI.delete(tiendaId);
+      toast.success('Tienda eliminada exitosamente');
+      router.push('/tiendas');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar la tienda';
+      toast.error(errorMessage);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -67,7 +91,9 @@ const TiendaDetailContent = ({ tiendaId }: { tiendaId: string }) => {
     );
   }
 
-  const isOwner = user?.id === tienda.usuario_id;
+  // TODO: Implementar verificación de propietario cuando el backend incluya usuario_id
+  // Temporalmente habilitado para pruebas
+  const isOwner = true; // user?._id === tienda.usuario_id;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -76,47 +102,35 @@ const TiendaDetailContent = ({ tiendaId }: { tiendaId: string }) => {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-4 mb-4">
-              {tienda.logo && (
-                <Image
-                  src={tienda.logo}
-                  alt={`Logo de ${tienda.nombre}`}
-                  width={80}
-                  height={80}
-                  className="rounded-lg object-cover"
-                />
-              )}
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">{tienda.nombre}</h1>
-                <p className="text-gray-600 mt-1">{tienda.descripcion}</p>
+                <p className="text-gray-600 mt-1">
+                  Tienda creada el {new Date(tienda.createdAt).toLocaleDateString()}
+                </p>
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center text-gray-600">
                 <MapPin className="mr-3 h-5 w-5" />
-                <span>{tienda.direccion}</span>
+                <span>Información de ubicación no disponible</span>
               </div>
               
               <div className="flex items-center text-gray-600">
                 <Phone className="mr-3 h-5 w-5" />
-                <span>{tienda.telefono}</span>
+                <span>Información de contacto no disponible</span>
               </div>
               
               <div className="flex items-center text-gray-600">
                 <Clock className="mr-3 h-5 w-5" />
-                <span>{tienda.horario}</span>
+                <span>Horarios no disponibles</span>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2 mt-4">
-              <Badge variant="secondary">{tienda.ciudad}</Badge>
-              <Badge variant="outline">{tienda.pais}</Badge>
             </div>
           </div>
 
           {isOwner && (
             <div className="flex flex-col gap-2">
-              <Link href={`/tiendas/${tienda.id}/edit`}>
+              <Link href={`/tiendas/${tienda._id}/edit`}>
                 <Button className="w-full">
                   <Edit className="mr-2 h-4 w-4" />
                   Editar Tienda
@@ -132,6 +146,15 @@ const TiendaDetailContent = ({ tiendaId }: { tiendaId: string }) => {
                   Crear Publicación
                 </Button>
               </Link>
+              <Button 
+                variant="destructive" 
+                className="w-full" 
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {deleting ? 'Eliminando...' : 'Eliminar Tienda'}
+              </Button>
             </div>
           )}
         </div>
@@ -153,19 +176,19 @@ const TiendaDetailContent = ({ tiendaId }: { tiendaId: string }) => {
         ) : publicaciones.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {publicaciones.map((publicacion) => (
-              <Card key={publicacion.id} className="hover:shadow-md transition-shadow">
+              <Card key={publicacion._id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle className="text-lg">{publicacion.titulo}</CardTitle>
                   <CardDescription>
                     <div className="flex items-center text-sm text-gray-500">
                       <Calendar className="mr-1 h-4 w-4" />
-                      {new Date(publicacion.fecha_publicacion).toLocaleDateString()}
+                      {new Date(publicacion.fecha).toLocaleDateString()}
                     </div>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600 mb-4 line-clamp-3">
-                    {publicacion.contenido}
+                    {publicacion.descripcion}
                   </p>
                   {publicacion.imagenes && publicacion.imagenes.length > 0 && (
                     <div className="mb-4">
@@ -178,7 +201,7 @@ const TiendaDetailContent = ({ tiendaId }: { tiendaId: string }) => {
                       />
                     </div>
                   )}
-                  <Link href={`/publicaciones/${publicacion.id}`}>
+                  <Link href={`/publicaciones/${publicacion._id}`}>
                     <Button variant="outline" className="w-full">
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Ver Detalles

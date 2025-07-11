@@ -32,7 +32,7 @@ const DashboardContent = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          ¡Bienvenido, {user?.nombre}!
+          ¡Bienvenido, {user?.nombres}!
         </h1>
         <p className="mt-2 text-gray-600">
           Gestiona tus tiendas, productos y publicaciones desde tu dashboard
